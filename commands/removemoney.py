@@ -34,6 +34,9 @@ class RemoveMoney(commands.Cog):
             # [Debug 修復 #1] 加入在線備份攔截，確保備份期間數據不被修改
             if not await self.data_manager.check_backup_status(ctx, "removemoney"):
                 return
+            
+            if not await self.data_manager.check_economy_enabled(ctx, "removemoney"):
+                return
 
             if ctx.user.id != AUTHOR_ID:
                 embed = discord.Embed(
