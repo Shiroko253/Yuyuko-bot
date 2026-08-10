@@ -1,0 +1,207 @@
+{
+  "default_country": "US-California",
+  "regions": {
+    "US-California": {
+      "label": "美國・加州",
+      "group": "Americas",
+      "cities": [
+        {"name": "Los Angeles", "lat": 34.0522, "lon": -118.2437, "air": "los-angeles"},
+        {"name": "San Francisco", "lat": 37.7749, "lon": -122.4194, "air": "san-francisco"},
+        {"name": "San Diego", "lat": 32.7157, "lon": -117.1611, "air": "san-diego"},
+        {"name": "Sacramento", "lat": 38.5816, "lon": -121.4944, "air": "sacramento"}
+      ]
+    },
+    "US-NewYork": {
+      "label": "美國・紐約",
+      "group": "Americas",
+      "cities": [
+        {"name": "New York", "lat": 40.7128, "lon": -74.0060, "air": "new-york"},
+        {"name": "Buffalo", "lat": 42.8864, "lon": -78.8784, "air": "buffalo"}
+      ]
+    },
+    "Canada": {
+      "label": "加拿大",
+      "group": "Americas",
+      "cities": [
+        {"name": "Toronto", "lat": 43.6532, "lon": -79.3832, "air": "toronto"},
+        {"name": "Vancouver", "lat": 49.2827, "lon": -123.1207, "air": "vancouver"},
+        {"name": "Montreal", "lat": 45.5017, "lon": -73.5673, "air": "montreal"}
+      ]
+    },
+    "Brazil": {
+      "label": "巴西",
+      "group": "Americas",
+      "cities": [
+        {"name": "Sao Paulo", "lat": -23.5505, "lon": -46.6333, "air": "sao-paulo"},
+        {"name": "Rio de Janeiro", "lat": -22.9068, "lon": -43.1729, "air": "rio-de-janeiro"}
+      ]
+    },
+    "Malaysia": {
+      "label": "馬來西亞",
+      "group": "Asia",
+      "cities": [
+        {"name": "Kuala Lumpur", "lat": 3.1390, "lon": 101.6869, "air": "kuala-lumpur"},
+        {"name": "Kuching", "lat": 1.5533, "lon": 110.3592, "air": "kuching"},
+        {"name": "Kota Kinabalu", "lat": 5.9804, "lon": 116.0735, "air": "kota-kinabalu"},
+        {"name": "Johor Bahru", "lat": 1.4927, "lon": 103.7414, "air": "johor-bahru"},
+        {"name": "George Town", "lat": 5.4141, "lon": 100.3288, "air": "george-town"},
+        {"name": "Sibu", "lat": 2.3000, "lon": 111.8167, "air": "sibu"},
+        {"name": "Miri", "lat": 4.3995, "lon": 113.9914, "air": "miri"},
+        {"name": "Sandakan", "lat": 5.8394, "lon": 118.1139, "air": "sandakan"}
+      ]
+    },
+    "Singapore": {
+      "label": "新加坡",
+      "group": "Asia",
+      "cities": [
+        {"name": "Singapore", "lat": 1.3521, "lon": 103.8198, "air": "singapore"}
+      ]
+    },
+    "Japan": {
+      "label": "日本",
+      "group": "Asia",
+      "cities": [
+        {"name": "Tokyo", "lat": 35.6762, "lon": 139.6503, "air": "tokyo"},
+        {"name": "Osaka", "lat": 34.6937, "lon": 135.5023, "air": "osaka"},
+        {"name": "Sapporo", "lat": 43.0618, "lon": 141.3545, "air": "sapporo"},
+        {"name": "Fukuoka", "lat": 33.5904, "lon": 130.4017, "air": "fukuoka"},
+        {"name": "Nagoya", "lat": 35.1815, "lon": 136.9066, "air": "nagoya"}
+      ]
+    },
+    "Taiwan": {
+      "label": "台灣",
+      "group": "Asia",
+      "cities": [
+        {"name": "Taipei", "lat": 25.0330, "lon": 121.5654, "air": "taipei"},
+        {"name": "Kaohsiung", "lat": 22.6273, "lon": 120.3014, "air": "kaohsiung"},
+        {"name": "Taichung", "lat": 24.1477, "lon": 120.6736, "air": "taichung"}
+      ]
+    },
+    "South-Korea": {
+      "label": "韓國",
+      "group": "Asia",
+      "cities": [
+        {"name": "Seoul", "lat": 37.5665, "lon": 126.9780, "air": "seoul"},
+        {"name": "Busan", "lat": 35.1796, "lon": 129.0756, "air": "busan"},
+        {"name": "Incheon", "lat": 37.4563, "lon": 126.7052, "air": "incheon"}
+      ]
+    },
+    "Thailand": {
+      "label": "泰國",
+      "group": "Asia",
+      "cities": [
+        {"name": "Bangkok", "lat": 13.7563, "lon": 100.5018, "air": "bangkok"},
+        {"name": "Chiang Mai", "lat": 18.7883, "lon": 98.9853, "air": "chiang-mai"},
+        {"name": "Phuket", "lat": 7.8804, "lon": 98.3923, "air": "phuket"}
+      ]
+    },
+    "Vietnam": {
+      "label": "越南",
+      "group": "Asia",
+      "cities": [
+        {"name": "Hanoi", "lat": 21.0278, "lon": 105.8342, "air": "hanoi"},
+        {"name": "Ho Chi Minh City", "lat": 10.8231, "lon": 106.6297, "air": "ho-chi-minh-city"},
+        {"name": "Da Nang", "lat": 16.0544, "lon": 108.2022, "air": "da-nang"}
+      ]
+    },
+    "Indonesia": {
+      "label": "印尼",
+      "group": "Asia",
+      "cities": [
+        {"name": "Jakarta", "lat": -6.2088, "lon": 106.8456, "air": "jakarta"},
+        {"name": "Surabaya", "lat": -7.2575, "lon": 112.7521, "air": "surabaya"},
+        {"name": "Denpasar", "lat": -8.6705, "lon": 115.2126, "air": "denpasar"}
+      ]
+    },
+    "Philippines": {
+      "label": "菲律賓",
+      "group": "Asia",
+      "cities": [
+        {"name": "Manila", "lat": 14.5995, "lon": 120.9842, "air": "manila"},
+        {"name": "Cebu", "lat": 10.3157, "lon": 123.8854, "air": "cebu"},
+        {"name": "Davao", "lat": 7.1907, "lon": 125.4553, "air": "davao"}
+      ]
+    },
+    "China": {
+      "label": "中國",
+      "group": "Asia",
+      "cities": [
+        {"name": "Beijing", "lat": 39.9042, "lon": 116.4074, "air": "beijing"},
+        {"name": "Shanghai", "lat": 31.2304, "lon": 121.4737, "air": "shanghai"},
+        {"name": "Guangzhou", "lat": 23.1291, "lon": 113.2644, "air": "guangzhou"},
+        {"name": "Shenzhen", "lat": 22.5431, "lon": 114.0579, "air": "shenzhen"},
+        {"name": "Chengdu", "lat": 30.5728, "lon": 104.0668, "air": "chengdu"}
+      ]
+    },
+    "Hong-Kong": {
+      "label": "香港",
+      "group": "Asia",
+      "cities": [
+        {"name": "Hong Kong", "lat": 22.3193, "lon": 114.1694, "air": "hongkong"}
+      ]
+    },
+    "India": {
+      "label": "印度",
+      "group": "Asia",
+      "cities": [
+        {"name": "Delhi", "lat": 28.7041, "lon": 77.1025, "air": "delhi"},
+        {"name": "Mumbai", "lat": 19.0760, "lon": 72.8777, "air": "mumbai"},
+        {"name": "Bangalore", "lat": 12.9716, "lon": 77.5946, "air": "bangalore"},
+        {"name": "Kolkata", "lat": 22.5726, "lon": 88.3639, "air": "kolkata"}
+      ]
+    },
+    "United-Kingdom": {
+      "label": "英國",
+      "group": "Europe",
+      "cities": [
+        {"name": "London", "lat": 51.5074, "lon": -0.1278, "air": "london"},
+        {"name": "Manchester", "lat": 53.4808, "lon": -2.2426, "air": "manchester"},
+        {"name": "Edinburgh", "lat": 55.9533, "lon": -3.1883, "air": "edinburgh"}
+      ]
+    },
+    "France": {
+      "label": "法國",
+      "group": "Europe",
+      "cities": [
+        {"name": "Paris", "lat": 48.8566, "lon": 2.3522, "air": "paris"},
+        {"name": "Lyon", "lat": 45.7640, "lon": 4.8357, "air": "lyon"},
+        {"name": "Marseille", "lat": 43.2965, "lon": 5.3698, "air": "marseille"}
+      ]
+    },
+    "Germany": {
+      "label": "德國",
+      "group": "Europe",
+      "cities": [
+        {"name": "Berlin", "lat": 52.5200, "lon": 13.4050, "air": "berlin"},
+        {"name": "Munich", "lat": 48.1351, "lon": 11.5820, "air": "munich"},
+        {"name": "Hamburg", "lat": 53.5511, "lon": 9.9937, "air": "hamburg"}
+      ]
+    },
+    "Australia": {
+      "label": "澳洲",
+      "group": "Oceania",
+      "cities": [
+        {"name": "Sydney", "lat": -33.8688, "lon": 151.2093, "air": "sydney"},
+        {"name": "Melbourne", "lat": -37.8136, "lon": 144.9631, "air": "melbourne"},
+        {"name": "Brisbane", "lat": -27.4698, "lon": 153.0251, "air": "brisbane"},
+        {"name": "Perth", "lat": -31.9505, "lon": 115.8605, "air": "perth"}
+      ]
+    },
+    "New-Zealand": {
+      "label": "紐西蘭",
+      "group": "Oceania",
+      "cities": [
+        {"name": "Auckland", "lat": -36.8509, "lon": 174.7645, "air": "auckland"},
+        {"name": "Wellington", "lat": -41.2865, "lon": 174.7762, "air": "wellington"}
+      ]
+    },
+    "UAE": {
+      "label": "阿聯酋",
+      "group": "Other",
+      "cities": [
+        {"name": "Dubai", "lat": 25.2048, "lon": 55.2708, "air": "dubai"},
+        {"name": "Abu Dhabi", "lat": 24.4539, "lon": 54.3773, "air": "abu-dhabi"}
+      ]
+    }
+  }
+}
