@@ -152,6 +152,9 @@ class Credit(commands.Cog):
         if not ctx.guild:
             await ctx.respond("❌ 信譽查詢只能在伺服器中使用哦～", ephemeral=True)
             return
+        
+        if not await self.data_manager.check_economy_enabled(ctx, "credit"):
+            return
 
         target = member or ctx.author
         guild_id = str(ctx.guild.id)
