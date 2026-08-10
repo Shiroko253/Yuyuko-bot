@@ -16,6 +16,9 @@ class ChooseJob(commands.Cog):
 
     @discord.slash_command(name="choose_job", description="幽幽子邀你選擇靈魂的工作～")
     async def choose_job(self, ctx: discord.ApplicationContext):
+        if not await self.data_manager.check_economy_enabled(ctx, "choose_job"):
+            return
+        
         try:
             if not await self.bot.data_manager.check_backup_status(ctx, "choose_job"):
                 return
