@@ -52,6 +52,8 @@ class Balance(commands.Cog):
     )
     async def balance(self, ctx: discord.ApplicationContext):
         """查詢幽靈幣餘額"""
+        if not await self.data_manager.check_economy_enabled(ctx, "balance"):
+            return
         try:
             if not ctx.guild:
                 embed = discord.Embed(
