@@ -395,6 +395,9 @@ class FishShop(commands.Cog):
         # [Debug 修復 #4] 加入在線備份攔截
         if not await self.data_manager.check_backup_status(ctx, "fish_shop"):
             return
+        
+        if not await self.data_manager.check_economy_enabled(ctx, "fish_shop"):
+            return
 
         await ctx.defer()
 
