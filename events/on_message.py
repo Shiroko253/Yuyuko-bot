@@ -9,19 +9,24 @@ import os
 import sqlite3
 import openai
 
+# Tavily 搜尋
+try:
+    from tavily import TavilyClient
+    TAVILY_AVAILABLE = True
+except ImportError:
+    TAVILY_AVAILABLE = False
+
 logger = logging.getLogger("SakuraBot.events.on_message")
 
 # [ChatAnywhere 專屬修復] 移除 /v1/ 避免新版 SDK 拼接後變成 /v1//v1/ 導致 404
 # 使用 .tech 域名通常比 .org 更穩定
-API_URL = 'https://api.chatanywhere.tech' 
+API_URL = 'https://api.chatanywhere.tech'
 AUTHOR_ID = int(os.getenv("AUTHOR_ID", 0))
 
 # [相容性修復] 自動判斷 openai 套件版本
-# 新版 (>= 1.0.0) 使用 openai.OpenAI，舊版 (< 1.0.0) 使用 openai.ChatCompletion
 IS_NEW_OPENAI = hasattr(openai, 'OpenAI')
 if not IS_NEW_OPENAI:
     logger.warning("偵測到舊版 openai 套件 (<1.0.0)，將使用舊版語法呼叫 API。建議未來執行 'pip install --upgrade openai' 升級。")
-
 
 class OnMessage(commands.Cog):
     def __init__(self, bot):
@@ -31,6 +36,17 @@ class OnMessage(commands.Cog):
             {"key": os.getenv('CHATANYWHERE_API2'), "limit": 200, "remaining": 200}
         ]
         self.current_api_index = 0
+
+        # ========== 搜尋相關設定 ==========
+        self.tavily_api_key = os.getenv("TAVILY_API_KEY")
+        self.daily_search_limit = 100  # 機器人每天全域搜尋上限
+        self.search_keywords = [
+            "天氣", "氣溫", "下雨", "新聞", "最新", "現在", "今天", "目前",
+            "幾點", "時間", "價格", "匯率", "股票", "金價", "油價",
+            "比賽", "比分", "誰贏", "發生什麼", "即時", "直播",
+            "最近", "剛", "剛發生", "現況", "狀況如何", "現在幾點",
+            "今天天氣", "最新消息", "目前狀況"
+        ]
 
         # [Debug 修復 #4] 先確保檔案存在，再載入彩蛋配置
         self.bot.data_manager._initialize_json("config/on_message.json", self._get_default_config())
@@ -43,6 +59,11 @@ class OnMessage(commands.Cog):
         for idx, api in enumerate(self.api_keys):
             if not api["key"]:
                 logger.error(f"API {idx} 沒有設置金鑰，請設置 CHATANYWHERE_API 或 CHATANYWHERE_API2 環境變數")
+
+        if not self.tavily_api_key:
+            logger.warning("未設置 TAVILY_API_KEY，搜尋功能將無法使用")
+        if not TAVILY_AVAILABLE:
+            logger.warning("未安裝 tavily-python，請執行 pip install tavily-python")
 
     def _get_default_config(self):
         """預設彩蛋配置"""
@@ -122,6 +143,98 @@ class OnMessage(commands.Cog):
             }
         }
 
+    # ========== 搜尋相關方法 ==========
+
+    def needs_search(self, prompt: str) -> bool:
+        """關鍵字判斷是否需要搜尋"""
+        prompt_lower = prompt.lower()
+        return any(kw in prompt_lower for kw in self.search_keywords)
+
+    def get_today_search_count(self, db_path: str) -> int:
+        """取得今天已經搜尋的次數（全域，每天凌晨4點重置）"""
+        from zoneinfo import ZoneInfo
+        now = datetime.now(ZoneInfo("Asia/Taipei"))
+    
+        # 還沒到4點就算前一天
+        if now.hour < 4:
+            today = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+        else:
+            today = now.strftime("%Y-%m-%d")
+
+        try:
+            with sqlite3.connect(db_path, check_same_thread=False) as conn:
+                c = conn.cursor()
+                c.execute("""
+                    CREATE TABLE IF NOT EXISTS SearchQuota (
+                        date TEXT PRIMARY KEY,
+                        count INTEGER DEFAULT 0
+                    )
+                """)
+                c.execute("SELECT count FROM SearchQuota WHERE date = ?", (today,))
+                row = c.fetchone()
+                return row[0] if row else 0
+        except Exception as e:
+            logger.error(f"讀取搜尋額度失敗: {e}")
+            return 999
+
+    def increment_search_count(self, db_path: str):
+        """搜尋次數 +1（每天凌晨4點重置）"""
+        from zoneinfo import ZoneInfo
+        now = datetime.now(ZoneInfo("Asia/Taipei"))
+    
+        if now.hour < 4:
+            today = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+        else:
+            today = now.strftime("%Y-%m-%d")
+
+        try:
+            with sqlite3.connect(db_path, check_same_thread=False) as conn:
+                c = conn.cursor()
+                c.execute("""
+                    INSERT INTO SearchQuota (date, count) VALUES (?, 1)
+                    ON CONFLICT(date) DO UPDATE SET count = count + 1
+                """, (today,))
+                conn.commit()
+        except Exception as e:
+            logger.error(f"更新搜尋額度失敗: {e}")
+
+    def search_with_tavily(self, query: str) -> str:
+        """呼叫 Tavily 搜尋，回傳整理後的文字"""
+        if not TAVILY_AVAILABLE or not self.tavily_api_key:
+            return ""
+
+        try:
+            client = TavilyClient(api_key=self.tavily_api_key)
+            response = client.search(
+                query=query,
+                search_depth="basic",      # 省額度
+                max_results=5,
+                include_answer=True
+            )
+
+            # 優先使用 Tavily 的 answer 摘要
+            if response.get("answer"):
+                return f"【網路搜尋摘要】\n{response['answer']}"
+
+            # 沒有 answer 就整理 results
+            results = response.get("results", [])
+            if not results:
+                return ""
+
+            lines = ["【網路搜尋結果】"]
+            for i, r in enumerate(results[:4], 1):
+                title = r.get("title", "無標題")
+                content = (r.get("content") or "")[:280]
+                lines.append(f"{i}. {title}\n{content}")
+
+            return "\n\n".join(lines)
+
+        except Exception as e:
+            logger.error(f"Tavily 搜尋失敗: {e}")
+            return ""
+
+    # ========== 原本方法 ==========
+
     @staticmethod
     def record_message(user_id, message, db_path):
         """記錄用戶訊息到資料庫 (同步方法)"""
@@ -188,16 +301,29 @@ class OnMessage(commands.Cog):
             return None
 
     def generate_response(self, prompt, user_id):
-        """生成 AI 回應 (自動相容 openai 新舊版本，針對 ChatAnywhere 優化)"""
+        """生成 AI 回應 (自動相容 openai 新舊版本，針對 ChatAnywhere 優化 + 搜尋)"""
         tried_all_apis = False
         original_index = self.current_api_index
         db_path = self.bot.data_manager.db_path
+
+        # ========== 搜尋邏輯 ==========
+        search_context = ""
+        if self.needs_search(prompt):
+            current_count = self.get_today_search_count(db_path)
+            if current_count < self.daily_search_limit:
+                search_result = self.search_with_tavily(prompt)
+                if search_result:
+                    search_context = search_result
+                    self.increment_search_count(db_path)
+                    logger.info(f"已使用搜尋額度：{current_count + 1}/{self.daily_search_limit}")
+            else:
+                logger.info("今日搜尋額度已用完，跳過搜尋")
 
         while True:
             try:
                 api_info = self.api_keys[self.current_api_index]
                 api_key = api_info["key"]
-                
+
                 if not api_key:
                     logger.error(f"API {self.current_api_index} 沒有設置金鑰")
                     return "伺服器金鑰未設定，請通知管理員設置環境變數。"
@@ -210,7 +336,7 @@ class OnMessage(commands.Cog):
                         tried_all_apis = True
                     if tried_all_apis:
                         return "幽幽子今天吃太飽，所有 Key 都在午睡，等會兒再來吧～"
-                    continue 
+                    continue
 
                 # 獲取對話歷史與背景資訊 (同步 DB 操作)
                 with sqlite3.connect(db_path, check_same_thread=False) as conn:
@@ -241,30 +367,38 @@ class OnMessage(commands.Cog):
                 else:
                     updated_background_info = user_background_info
 
+                # ========== 組 messages（加入搜尋結果）==========
+                system_content = f"你現在是西行寺幽幽子，冥界的幽靈公主，背景資訊：{updated_background_info}"
+
+                if search_context:
+                    system_content += (
+                        "\n\n以下是剛從現世查到的最新資訊，請用幽幽子輕飄飄、悠閒的語氣自然地引用這些資訊來回答。"
+                        "不要直接說「根據搜尋結果」或「我查到了」，要像是你本來就知道一樣："
+                        f"\n\n{search_context}"
+                    )
+
                 messages = [
-                    {"role": "system", "content": f"你現在是西行寺幽幽子，冥界的幽靈公主，背景資訊：{updated_background_info}"},
+                    {"role": "system", "content": system_content},
                     {"role": "assistant", "content": f"已知對話歷史：\n{context}"},
                     {"role": "user", "content": prompt}
                 ]
 
                 # [相容性修復] 根據 openai 版本選擇不同的呼叫方式
                 if IS_NEW_OPENAI:
-                    # 新版 (>= 1.0.0) 寫法
                     client = openai.OpenAI(
                         api_key=api_key,
-                        base_url=API_URL, 
-                        timeout=15.0  # 最多等 15 秒
+                        base_url=API_URL,
+                        timeout=15.0
                     )
                     response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
+                        model="gpt-5-nano",
                         messages=messages,
                         max_tokens=500,
                         temperature=0.9
                     )
                     content = response.choices[0].message.content.strip()
                 else:
-                    # 舊版 (< 1.0.0) 寫法
-                    openai.api_base = f"{API_URL}/v1" # 舊版需要手動加 /v1
+                    openai.api_base = f"{API_URL}/v1"
                     openai.api_key = api_key
                     response = openai.ChatCompletion.create(
                         model="gpt-3.5-turbo",
@@ -278,22 +412,21 @@ class OnMessage(commands.Cog):
                 api_info["remaining"] -= 1
                 return content
 
-            # [相容性修復] 使用 type(e).__name__ 判斷錯誤，新舊版本 openai 套件皆適用
             except Exception as e:
                 error_name = type(e).__name__
                 status_code = getattr(e, 'status_code', 0)
 
-                # 1. 處理 429 速率限制 (ChatAnywhere 免費 Key 常見)
+                # 1. 處理 429 速率限制
                 if error_name == 'RateLimitError' or status_code == 429:
                     logger.warning(f"API {self.current_api_index} 觸發速率限制 (429)，切換下一個 Key")
-                    self.api_keys[self.current_api_index]["remaining"] = 0 
+                    self.api_keys[self.current_api_index]["remaining"] = 0
                     self.current_api_index = (self.current_api_index + 1) % len(self.api_keys)
                     if self.current_api_index == original_index:
                         tried_all_apis = True
                     if tried_all_apis:
                         return "幽幽子被頻繁呼喚，有點喘不過氣了呢～請稍等幾分鐘再試吧♪"
 
-                # 2. 處理 5xx 伺服器錯誤 (ChatAnywhere 中轉站波動)
+                # 2. 處理 5xx 伺服器錯誤
                 elif error_name in ['APIStatusError', 'APIError'] and (status_code >= 500 or status_code == 0):
                     logger.error(f"API {self.current_api_index} 發生伺服器錯誤 ({status_code or 'Unknown'})，切換下一個 Key")
                     self.current_api_index = (self.current_api_index + 1) % len(self.api_keys)
@@ -301,8 +434,8 @@ class OnMessage(commands.Cog):
                         tried_all_apis = True
                     if tried_all_apis:
                         return "冥界通往現世的橋樑似乎斷裂了 (伺服器波動)....幽幽子也過不去呢，請稍後再試♪"
-                
-                # 3. 處理超時 (Timeout)
+
+                # 3. 處理超時
                 elif error_name in ['APITimeoutError', 'Timeout']:
                     logger.warning(f"API {self.current_api_index} 請求超時 (Timeout)，切換下一個 Key")
                     self.current_api_index = (self.current_api_index + 1) % len(self.api_keys)
@@ -339,7 +472,6 @@ class OnMessage(commands.Cog):
             return
 
         content = message.content
-        # [Debug 修復 #3] 統一使用 content_lower 進行所有關鍵字比對
         content_lower = content.lower()
         channel = message.channel
         db_path = self.bot.data_manager.db_path
@@ -357,14 +489,20 @@ class OnMessage(commands.Cog):
 
         if is_reply_to_bot or is_mentioning_bot:
             user_id = str(message.author.id)
-            
-            # [Debug 修復 #1] 使用 asyncio.to_thread 避免阻塞 Event Loop
+
+            # 記錄訊息
             await asyncio.to_thread(self.record_message, user_id, content, db_path)
             await asyncio.to_thread(self.clean_old_messages, db_path)
-            
-            # [Debug 修復 #1] OpenAI API 丟到執行緒池
-            response = await asyncio.to_thread(self.generate_response, content, user_id)
-            await channel.send(response)
+
+            # 先回覆「思考中」，避免用戶以為沒反應
+            thinking_msg = await channel.send("幽幽子正在回想中...（可能在查資料呢）")
+
+            try:
+                response = await asyncio.to_thread(self.generate_response, content, user_id)
+                await thinking_msg.edit(content=response)
+            except Exception as e:
+                logger.exception(f"生成回應時發生錯誤: {e}")
+                await thinking_msg.edit(content="幽幽子好像打了個瞌睡...再試一次吧♪")
             return
 
         # --- 簡單關鍵字回應 ---
@@ -373,7 +511,7 @@ class OnMessage(commands.Cog):
                 await channel.send(response)
                 return
 
-        # [Debug 修復 #2] 補上原本遺漏的 random_responses 處理邏輯
+        # --- 隨機關鍵字回應 ---
         for keyword, responses in self.easter_eggs.get("random_responses", {}).items():
             if keyword in content_lower:
                 if isinstance(responses, list) and responses:
@@ -545,10 +683,8 @@ class OnMessage(commands.Cog):
             'content': message.content,
             'timestamp': message.created_at.isoformat()
         })
-
         await self.bot.data_manager.save_all_async()
         logger.info(f"私訊記錄: {message.author} - {message.content}")
-
 
 def setup(bot):
     bot.add_cog(OnMessage(bot))
