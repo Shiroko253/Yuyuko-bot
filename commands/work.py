@@ -40,6 +40,9 @@ class Work(commands.Cog):
             # [Debug 修復] 加入在線備份攔截
             if not await self.data_manager.check_backup_status(ctx, "work"):
                 return
+            
+            if not await self.data_manager.check_economy_enabled(ctx, "work"):
+                return
 
             await ctx.defer(ephemeral=False)
 

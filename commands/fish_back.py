@@ -171,6 +171,9 @@ class FishBack(commands.Cog):
     async def fish_back(self, ctx: ApplicationContext):
         # 純查詢指令，不需要 check_backup_status 攔截
         await ctx.defer(ephemeral=True)
+        
+        if not await self.data_manager.check_economy_enabled(ctx, "fish_back"):
+            return
 
         user_id = str(ctx.user.id)
         guild_id = str(ctx.guild.id) if ctx.guild else "dm"

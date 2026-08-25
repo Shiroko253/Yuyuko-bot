@@ -616,6 +616,8 @@ class BlackjackPVP(commands.Cog):
         opponent: discord.Member = discord.Option(discord.Member, "挑戰對象"),
         bet: float = discord.Option(float, "下注金額 (幽靈幣)", min_value=1.0)
     ):
+        if not await self.data_manager.check_economy_enabled(ctx, "blackjack_pvp"):
+            return
         try:
             if not await self.data_manager.check_backup_status(ctx, "blackjack_pvp"):
                 return

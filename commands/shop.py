@@ -34,6 +34,9 @@ class Shop(commands.Cog):
         # [Debug 修復 #1] 加入在線備份攔截
         if not await self.data_manager.check_backup_status(ctx, "shop"):
             return
+        
+        if not await self.data_manager.check_economy_enabled(ctx, "shop"):
+            return
 
         try:
             # [Debug 修復 #2] 使用 to_thread 包裝同步 I/O，避免阻塞 Event Loop

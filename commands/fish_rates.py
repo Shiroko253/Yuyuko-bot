@@ -129,6 +129,9 @@ class FishRates(commands.Cog):
     )
     async def fish_rates(self, ctx: ApplicationContext):
         await ctx.defer()
+        
+        if not await self.data_manager.check_economy_enabled(ctx, "fish_rates"):
+            return
 
         try:
             rarity_weights = self.get_rarity_weights()

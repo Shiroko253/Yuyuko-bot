@@ -218,6 +218,9 @@ class ServerBank(commands.Cog):
     @discord.slash_command(name="server_bank", description="🌸 與幽幽子的櫻花金庫互動～")
     async def server_bank(self, ctx: discord.ApplicationContext):
         if not await self.data_manager.check_backup_status(ctx, "server_bank"): return
+        
+        if not await self.data_manager.check_economy_enabled(ctx, "server_bank"):
+            return
 
         guild_id, user_id, owner_id = str(ctx.guild.id), str(ctx.author.id), str(ctx.guild.owner_id)
         
