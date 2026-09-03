@@ -151,6 +151,16 @@ class SakuraDataManager:
             "regions": {},
         })
         
+        notify_cache_path = f"{self.data_dir}/notify_cache.json"
+        self._initialize_json(notify_cache_path, {"air": {}, "weather": {}})
+        self.notify_cache = self._load_json(
+            notify_cache_path, {"air": {}, "weather": {}}
+        )
+        if "air" not in self.notify_cache:
+            self.notify_cache["air"] = {}
+        if "weather" not in self.notify_cache:
+            self.notify_cache["weather"] = {}
+        
     def get_default_country(self) -> str:
         return self.locations.get("default_country") or "US-California"
 
@@ -171,9 +181,15 @@ class SakuraDataManager:
         _, region = self.get_region(country)
         cities = list(region.get("cities") or [])
         if city:
-            filtered = [c for c in cities if c.get("name", "").lower() == city.lower()]
+            filtered = [
+                c for c in cities
+                if (c.get("name") or "").lower() == city.lower()
+            ]
             if filtered:
                 return filtered
+            logger.warning(
+                "城市「%s」不在清單，改用全部重點城市", city
+            )
         return cities
 
     def regions_by_group(self) -> dict[str, list[tuple[str, dict]]]:
@@ -183,6 +199,38 @@ class SakuraDataManager:
             g = region.get("group") or "Other"
             grouped.setdefault(g, []).append((key, region))
         return grouped
+    
+    def get_air_cache(self, city: str) -> Optional[dict]:
+        return (self.notify_cache.get("air") or {}).get(city)
+
+    def set_air_cache(self, city: str, aqi: int) -> None:
+        from datetime import datetime, timezone, timedelta
+        tz = timezone(timedelta(hours=8))
+        self.notify_cache.setdefault("air", {})[city] = {
+            "aqi": int(aqi),
+            "ts": datetime.now(tz).isoformat(),
+        }
+
+    def get_weather_cache(self, city: str) -> Optional[dict]:
+        return (self.notify_cache.get("weather") or {}).get(city)
+
+    def set_weather_cache(
+        self,
+        city: str,
+        temp,
+        feels,
+        humidity=None,
+        rain_prob=None,
+    ) -> None:
+        from datetime import datetime, timezone, timedelta
+        tz = timezone(timedelta(hours=8))
+        self.notify_cache.setdefault("weather", {})[city] = {
+            "temp": temp,
+            "feels": feels,
+            "humidity": humidity,
+            "rain_prob": rain_prob,
+            "ts": datetime.now(tz).isoformat(),
+        }
 
     def setup_locks(self):
         self.balance_lock = asyncio.Lock()
@@ -343,6 +391,10 @@ class SakuraDataManager:
         self._save_json(f"{self.player_data_dir}/fishingbackpack.json", snapshot["fishingbackpack"])
         self._save_yaml(f"{self.player_data_dir}/user_config.yml", snapshot["user_config"])
         self._save_json(f"{self.data_dir}/guild_config.json", snapshot["guild_config"])
+        self._save_json(
+            f"{self.data_dir}/notify_cache.json",
+            snapshot["notify_cache"],
+            )
 
     def save_all(self):
         self._save_snapshot({
@@ -357,30 +409,32 @@ class SakuraDataManager:
             "fishingbackpack": self.fishingbackpack,
             "user_config": self.user_config,
             "guild_config": self.guild_config,
+            "notify_cache": self.notify_cache,  # ← 必加
         })
 
-    async def save_all_async(self):
-        if self.save_lock is None:
-            logger.warning("save_lock 尚未初始化，直接同步保存")
-            self.save_all()
-            return
+        async def save_all_async(self):
+            if self.save_lock is None:
+                logger.warning("save_lock 尚未初始化，直接同步保存")
+                self.save_all()
+                return
 
-        async with self.save_lock:
-            snapshot = {
-                "balance": copy.deepcopy(self.balance),
-                "server_vault": copy.deepcopy(self.server_vault),
-                "personal_bank": copy.deepcopy(self.personal_bank),
-                "credit": copy.deepcopy(self.credit),
-                "blackjack_data": copy.deepcopy(self.blackjack_data),
-                "invalid_bet_count": copy.deepcopy(self.invalid_bet_count),
-                "bot_status": copy.deepcopy(self.bot_status),
-                "dm_messages": copy.deepcopy(self.dm_messages),
-                "fishingbackpack": copy.deepcopy(self.fishingbackpack),
-                "user_config": copy.deepcopy(self.user_config),
-                "guild_config": copy.deepcopy(self.guild_config),
-            }
-        await asyncio.to_thread(self._save_snapshot, snapshot)
-        logger.info("數據已安全保存")
+            async with self.save_lock:
+                snapshot = {
+                    "balance": copy.deepcopy(self.balance),
+                    "server_vault": copy.deepcopy(self.server_vault),
+                    "personal_bank": copy.deepcopy(self.personal_bank),
+                    "credit": copy.deepcopy(self.credit),
+                    "blackjack_data": copy.deepcopy(self.blackjack_data),
+                    "invalid_bet_count": copy.deepcopy(self.invalid_bet_count),
+                    "bot_status": copy.deepcopy(self.bot_status),
+                    "dm_messages": copy.deepcopy(self.dm_messages),
+                    "fishingbackpack": copy.deepcopy(self.fishingbackpack),
+                    "user_config": copy.deepcopy(self.user_config),
+                    "guild_config": copy.deepcopy(self.guild_config),
+                    "notify_cache": copy.deepcopy(self.notify_cache),  # ← 必加
+                }
+                await asyncio.to_thread(self._save_snapshot, snapshot)
+                logger.info("數據已安全保存")
 
 
 # ----------- 幽幽子的靈魂啟動 -----------
