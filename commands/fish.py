@@ -379,6 +379,9 @@ class Fish(commands.Cog):
         # [修復] 獲取 commands_error_logger
         commands_error_logger = logging.getLogger("SakuraBot.CommandsError")
         
+        if not await self.data_manager.check_economy_enabled(ctx, "fish"):
+            return
+        
         try:
             fish_data = await asyncio.to_thread(self.get_fish_data)
             if not fish_data:

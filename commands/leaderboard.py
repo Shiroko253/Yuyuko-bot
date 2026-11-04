@@ -34,6 +34,9 @@ class LeaderboardCog(commands.Cog):
             embed.set_footer(text="請在伺服器中使用 · 幽幽子")
             await ctx.respond(embed=embed, ephemeral=True)
             return
+        
+        if not await self.data_manager.check_economy_enabled(ctx, "leaderboard"):
+            return
 
         await ctx.defer()
 

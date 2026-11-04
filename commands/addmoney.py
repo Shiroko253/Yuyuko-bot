@@ -51,6 +51,8 @@ class EconomyAdmin(commands.Cog):
         member: discord.Member,
         amount: str
     ):
+        if not await self.data_manager.check_economy_enabled(ctx, "addmoney"):
+            return
         """管理員添加金錢指令"""
         try:
             if not hasattr(self.bot, "data_manager") or not await self.bot.data_manager.check_backup_status(ctx, "addmoney"):
@@ -233,4 +235,5 @@ class EconomyAdmin(commands.Cog):
 
 def setup(bot: discord.Bot):
     bot.add_cog(EconomyAdmin(bot))
-    logger.info("經濟系統管理模組已載入")
+    # [修復] 將生硬的英文/中文日誌改為符合幽幽子風格的冥界語氣
+    logger.info("💰 冥界經濟管理後門已於櫻花樹下開啟")

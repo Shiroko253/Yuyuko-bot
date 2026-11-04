@@ -74,6 +74,9 @@ class Backpack(commands.Cog):
     )
     async def backpack(self, ctx: discord.ApplicationContext):
         """查看背包並管理物品"""
+        if not await self.data_manager.check_economy_enabled(ctx, "backpack"):
+            return
+        
         if not ctx.guild:
             await ctx.respond("❌ 背包功能只能在伺服器裡使用哦～", ephemeral=True)
             return

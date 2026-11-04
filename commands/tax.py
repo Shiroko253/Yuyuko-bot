@@ -43,6 +43,9 @@ class Tax(commands.Cog):
             # [Debug 修復 #1] 加入在線備份攔截
             if not await self.data_manager.check_backup_status(ctx, "tax"):
                 return
+                        
+            if not await self.data_manager.check_economy_enabled(ctx, "tax"):
+                return
 
             guild_id = str(ctx.guild.id)
             user_id  = str(ctx.author.id)

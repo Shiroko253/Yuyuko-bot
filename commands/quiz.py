@@ -214,6 +214,9 @@ class QuizCog(commands.Cog):
         # [Debug 修復] 加入在線備份攔截
         if data_manager and not await data_manager.check_backup_status(ctx, "quiz"):
             return
+        
+        if not await self.data_manager.check_economy_enabled(ctx, "quiz"):
+            return
 
         try:
             if data_manager:
